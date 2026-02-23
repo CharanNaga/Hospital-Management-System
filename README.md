@@ -63,7 +63,6 @@ Health Checks
 | DischargeService   | Discharge workflow & AI diet recommendation | DischargeDB   |
 | AuthService        | JWT authentication & user management        | AuthDB        |
 
-![Architecture](image.png)
 
 🛠 Tech Stack
 Backend

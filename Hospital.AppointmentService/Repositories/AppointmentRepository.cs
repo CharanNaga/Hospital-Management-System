@@ -21,4 +21,3 @@ namespace Hospital.AppointmentService.Repositories
             => await _context.SaveChangesAsync();
     }
 }
-}

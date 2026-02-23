@@ -1,0 +1,12 @@
+﻿CREATE DATABASE HospitalBedDb;
+GO
+
+USE HospitalBedDb;
+GO
+
+CREATE TABLE Beds (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    BedNumber NVARCHAR(50),
+    IsOccupied BIT,
+    PatientId UNIQUEIDENTIFIER NULL
+);

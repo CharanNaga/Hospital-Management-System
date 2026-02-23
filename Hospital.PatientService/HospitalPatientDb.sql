@@ -1,0 +1,17 @@
+﻿CREATE DATABASE HospitalPatientDb;
+GO
+
+USE HospitalPatientDb;
+GO
+
+CREATE TABLE Patients (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    FullName NVARCHAR(150) NOT NULL,
+    Age INT NOT NULL,
+    Gender NVARCHAR(20),
+    Phone NVARCHAR(20),
+    Email NVARCHAR(100),
+    Address NVARCHAR(250),
+    CreatedAt DATETIME2 DEFAULT GETUTCDATE()
+);
+GO

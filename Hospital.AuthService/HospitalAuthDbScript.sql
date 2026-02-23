@@ -1,0 +1,12 @@
+﻿CREATE DATABASE HospitalAuthDb;
+GO
+
+USE HospitalAuthDb;
+GO
+
+CREATE TABLE Users (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    Username NVARCHAR(100),
+    Password NVARCHAR(100),
+    Role NVARCHAR(50)
+);

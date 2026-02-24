@@ -22,6 +22,9 @@ public class PatientRepository : IPatientRepository
         await _context.Patients.AddAsync(patient);
     }
 
+    public void Remove(Patient patient)
+        => _context.Patients.Remove(patient);
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();

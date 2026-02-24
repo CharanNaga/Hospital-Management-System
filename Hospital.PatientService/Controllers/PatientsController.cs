@@ -1,6 +1,8 @@
 ﻿using Hospital.PatientService.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class PatientsController : ControllerBase
@@ -14,15 +16,31 @@ public class PatientsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
+        => Ok(await _repository.GetAllAsync());
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
     {
-        return Ok(await _repository.GetAllAsync());
+        var patient = await _repository.GetByIdAsync(id);
+        return patient is null ? NotFound() : Ok(patient);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Patient patient)
+    public async Task<IActionResult> Create([FromBody] Patient patient)
     {
         await _repository.AddAsync(patient);
         await _repository.SaveChangesAsync();
-        return Ok(patient);
+        return CreatedAtAction(nameof(GetById), new { id = patient.Id }, patient);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var patient = await _repository.GetByIdAsync(id);
+        if (patient is null) return NotFound();
+        _repository.Remove(patient);
+        await _repository.SaveChangesAsync();
+        return NoContent();
     }
 }

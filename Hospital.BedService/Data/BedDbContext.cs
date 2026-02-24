@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Hospital.BedService.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 
 public class BedDbContext : DbContext

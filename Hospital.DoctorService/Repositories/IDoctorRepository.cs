@@ -1,11 +1,10 @@
 ﻿using Hospital.DoctorService.Models;
 
-namespace Hospital.DoctorService.Repositories
+public interface IDoctorRepository
 {
-    public interface IDoctorRepository
-    {
-        Task<IEnumerable<Doctor>> GetAllAsync();
-        Task AddAsync(Doctor doctor);
-        Task SaveChangesAsync();
-    }
+    Task<IEnumerable<Doctor>> GetAllAsync();
+    Task<Doctor?> GetByIdAsync(Guid id);
+    Task AddAsync(Doctor doctor);
+    void Remove(Doctor doctor);
+    Task SaveChangesAsync();
 }

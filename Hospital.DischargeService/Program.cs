@@ -13,7 +13,10 @@ Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
 builder.Host.UseSerilog();
 
 builder.Services.AddDbContext<DischargeDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sql => sql.EnableRetryOnFailure()
+    ));
 
 builder.Services.AddScoped<IDischargeRepository, DischargeRepository>();
 builder.Services.AddScoped<IAIDietService, AIDietService>();
@@ -65,4 +68,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DischargeDbContext>();
+    db.Database.Migrate();
+}
 app.Run();

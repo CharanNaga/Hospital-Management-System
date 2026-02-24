@@ -16,7 +16,10 @@ builder.Host.UseSerilog();
 
 //Database
 builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sql => sql.EnableRetryOnFailure()
+    ));
 
 //Registering Repositories to IoC container
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -79,5 +82,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();

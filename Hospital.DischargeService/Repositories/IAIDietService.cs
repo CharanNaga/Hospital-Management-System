@@ -2,6 +2,7 @@
 {
     public interface IAIDietService
     {
-        string GenerateDiet(string diagnosis);
+        Task<string> GenerateDietAsync(string diagnosis, int patientAge);
     }
+
 }

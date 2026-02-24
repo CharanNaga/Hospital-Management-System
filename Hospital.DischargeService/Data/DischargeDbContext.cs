@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Hospital.DischargeService.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Hospital.DischargeService.Data
 {

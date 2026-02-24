@@ -13,8 +13,13 @@ public class AuthRepository : IAuthRepository
 
     public async Task<User?> ValidateUserAsync(string username, string password)
     {
-        return await _context.Users
-            .FirstOrDefaultAsync(x => x.Username == username && x.Password == password);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(x => x.Username == username);
+
+        if (user == null)
+            return null;
+
+        return BCrypt.Net.BCrypt.Verify(password, user.Password) ? user : null;
     }
 
     public async Task AddUserAsync(User user)

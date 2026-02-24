@@ -1,9 +1,9 @@
-﻿namespace Hospital.AppointmentService.Repositories
+﻿using Hospital.AppointmentService.Models;
+
+public interface IAppointmentRepository
 {
-    public interface IAppointmentRepository
-    {
-        Task<IEnumerable<Appointment>> GetAllAsync();
-        Task AddAsync(Appointment appointment);
-        Task SaveChangesAsync();
-    }
+    Task<IEnumerable<Appointment>> GetAllAsync();
+    Task<Appointment?> GetByIdAsync(Guid id);
+    Task AddAsync(Appointment appointment);
+    Task SaveChangesAsync();
 }

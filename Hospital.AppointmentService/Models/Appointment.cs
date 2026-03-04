@@ -9,5 +9,9 @@
         public string Status { get; set; } = "Scheduled";
         public string? Notes { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public string PatientName { get; set; } = string.Empty;
+        public string DoctorName { get; set; } = string.Empty;
+
     }
 }

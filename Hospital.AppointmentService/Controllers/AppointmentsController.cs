@@ -1,5 +1,6 @@
 ﻿using Hospital.AppointmentService.DTOs;
 using Hospital.AppointmentService.Models;
+using Hospital.AppointmentService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,14 +13,17 @@ namespace Hospital.AppointmentService.Controllers
     {
         private readonly IAppointmentRepository _repository;
         private readonly ILogger<AppointmentsController> _logger;
+        private readonly IEmailService _emailService;
 
         public AppointmentsController(
             IAppointmentRepository repository, 
-            ILogger<AppointmentsController> logger
+            ILogger<AppointmentsController> logger,
+            IEmailService emailService
             )
         {
             _repository = repository;
             _logger = logger;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -44,8 +48,25 @@ namespace Hospital.AppointmentService.Controllers
                 PatientId = dto.PatientId,
                 DoctorId = dto.DoctorId,
                 AppointmentDate = dto.AppointmentDate,
-                Notes = dto.Notes
+                Notes = dto.Notes,
+                PatientName = dto.PatientName,
+                DoctorName = dto.DoctorName
             };
+
+            // Send email — fire-and-forget with error handling (don't fail the request)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendAppointmentConfirmationAsync(
+                        dto.PatientEmail, dto.PatientName,
+                        dto.DoctorName, dto.DoctorEmail,
+                        dto.AppointmentDate, dto.Notes);
+                }
+                catch (Exception ex)
+                { _logger.LogError(ex, "Failed to send appointment email"); }
+            });
+
 
 
             await _repository.AddAsync(appointment);

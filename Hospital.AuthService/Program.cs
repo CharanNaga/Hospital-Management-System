@@ -10,9 +10,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 //Logging
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithThreadId()
+    .WriteTo.Console(outputTemplate:
+        "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} — {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File(
+        path: "Logs/auth-service-.log",           
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,                // Keep 30 days of logs
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} — {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
+
 builder.Host.UseSerilog();
+
 
 //Database
 builder.Services.AddDbContext<AuthDbContext>(options =>

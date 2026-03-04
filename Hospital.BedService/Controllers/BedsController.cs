@@ -1,4 +1,5 @@
-﻿using Hospital.BedService.Models;
+﻿using Hospital.BedService.DTOs;
+using Hospital.BedService.Models;
 using Hospital.BedService.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +13,10 @@ namespace Hospital.BedService.Controllers
     {
         private readonly IBedRepository _repository;
         private readonly ILogger<BedsController> _logger;
-        public BedsController(IBedRepository repository, ILogger<BedsController> logger)
+        public BedsController(
+            IBedRepository repository,
+            ILogger<BedsController> logger
+            )
         {
             _repository = repository;
             _logger = logger;
@@ -30,30 +34,47 @@ namespace Hospital.BedService.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var bed = await _repository.GetByIdAsync(id);
-            return bed is null ? NotFound(new { message = $"Bed {id} not found." }) : Ok(bed);
+            return bed is null 
+                ? NotFound(new { message = $"Bed {id} not found." })
+                : Ok(bed);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Bed bed)
+        public async Task<IActionResult> Create([FromBody] CreateBedDto dto)
         {
+            var bed = new Bed
+            { 
+                BedNumber = dto.BedNumber,
+                Ward = dto.Ward 
+            };
+
             await _repository.AddAsync(bed);
             await _repository.SaveChangesAsync();
+
             _logger.LogInformation("Bed {BedId} ({BedNumber}) created in ward {Ward}", bed.Id, bed.BedNumber, bed.Ward);
             return CreatedAtAction(nameof(GetById), new { id = bed.Id }, bed);
         }
 
         [HttpPatch("{id:guid}/assign")]
-        public async Task<IActionResult> Assign(Guid id, [FromBody] Guid patientId)
+        public async Task<IActionResult> Assign(Guid id, [FromBody] AssignBedDto dto)
         {
             var bed = await _repository.GetByIdAsync(id);
-            if (bed is null) return NotFound();
-            if (bed.IsOccupied) return Conflict(new { message = "Bed is already occupied" });
+            if (bed is null) 
+                return NotFound(new 
+                { message = $"Bed {id} not found." }
+                );
+
+            if (bed.IsOccupied)
+                return Conflict(new 
+                { message = "Bed is already occupied" }
+                );
 
             bed.IsOccupied = true;
-            bed.PatientId = patientId;
+            bed.PatientId = dto.PatientId;
             bed.OccupiedSince = DateTime.UtcNow;
             await _repository.SaveChangesAsync();
-            _logger.LogInformation("Bed {BedId} assigned to patient {PatientId}", id, patientId);
+
+            _logger.LogInformation("Bed {BedId} assigned to patient {PatientId}", id, dto.PatientId);
             return Ok(bed);
         }
 
@@ -61,7 +82,10 @@ namespace Hospital.BedService.Controllers
         public async Task<IActionResult> Release(Guid id)
         {
             var bed = await _repository.GetByIdAsync(id);
-            if (bed is null) return NotFound(new { message = $"Bed {id} not found." });
+            if (bed is null) 
+                return NotFound(new 
+                { message = $"Bed {id} not found." }
+                );
 
             bed.IsOccupied = false;
             bed.PatientId = null;

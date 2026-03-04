@@ -15,7 +15,10 @@ public class AuthController : ControllerBase
     private readonly IConfiguration _config;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthRepository repository, IConfiguration config, ILogger<AuthController> logger)
+    public AuthController(IAuthRepository repository,
+        IConfiguration config,
+        ILogger<AuthController> logger
+        )
     {
         _repository = repository;
         _config = config;
@@ -24,34 +27,50 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
     {
-        var user = await _repository.ValidateUserAsync(request.Username, request.Password);
+        var user = await _repository.ValidateUserAsync(dto.Username, dto.Password);
         if (user == null)
         {
-            _logger.LogWarning("Login failed for username: {Username}", request.Username);
-            return Unauthorized(new { message = "Invalid credentials" });
+            _logger.LogWarning("Login failed for username: {Username}", dto.Username);
+            return Unauthorized(new 
+            {
+                message = "Invalid username or password." 
+            });
         }
         var token = GenerateJwtToken(user);
         _logger.LogInformation("User {Username} logged in successfully", user.Username);
-        return Ok(new { token, role = user.Role, expires = DateTime.UtcNow.AddHours(2) });
+
+        return Ok(new 
+        {
+            token,
+            role = user.Role, 
+            expires = DateTime.UtcNow.AddHours(2)
+        });
     }
 
     [AllowAnonymous]
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+
+    public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
     {
-        var hashed = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        var hashed = BCrypt.Net.BCrypt.HashPassword(dto.Password);
         var user = new User
         {
-            Username = request.Username,
+            Username = dto.Username,
             Password = hashed,
-            Role = request.Role ?? "User"
+            Role = dto.Role ?? "User"
         };
+
         await _repository.AddUserAsync(user);
         await _repository.SaveChangesAsync();
         _logger.LogInformation("User {Username} registered with role {Role}", user.Username, user.Role);
-        return Ok(new { message = "User registered successfully", userId = user.Id });
+
+        return Ok(new
+        { message = "User registered successfully", 
+            userId = user.Id
+        });
     }
 
     private string GenerateJwtToken(User user)

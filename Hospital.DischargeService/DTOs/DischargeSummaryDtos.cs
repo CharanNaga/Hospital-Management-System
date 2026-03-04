@@ -7,6 +7,7 @@ public record DischargeSummaryDto(
     string Diagnosis,
     string Treatment,
     string Medications,
+    string AIDietRecommendation,
     string FollowUpInstructions,
     Guid DischargingDoctorId
 );

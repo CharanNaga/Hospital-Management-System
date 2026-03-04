@@ -1,4 +1,5 @@
-﻿using Hospital.StaffService.Models;
+﻿using Hospital.StaffService.DTOs;
+using Hospital.StaffService.Models;
 using Hospital.StaffService.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,10 @@ namespace Hospital.StaffService.Controllers
         private readonly ILogger<StaffController> _logger;
 
 
-        public StaffController(IStaffRepository repository, ILogger<StaffController> logger)
+        public StaffController(
+            IStaffRepository repository,
+            ILogger<StaffController> logger
+            )
         {
             _repository = repository;
             _logger = logger;
@@ -28,7 +32,12 @@ namespace Hospital.StaffService.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var staff = await _repository.GetByIdAsync(id);
-            return staff is null ? NotFound(new { message = $"Staff member {id} not found." }) : Ok(staff);
+            return (
+                (staff is null) || (!staff.IsActive)
+                )
+                ? NotFound(new 
+                { message = $"Staff member {id} not found." }) 
+                : Ok(staff);
         }
 
         [HttpGet("department/{department}")]
@@ -37,26 +46,42 @@ namespace Hospital.StaffService.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([FromBody] Staff staff)
+        public async Task<IActionResult> Create([FromBody] CreateStaffDto dto)
         {
+            var staff = new Staff
+            {
+                FullName = dto.FullName,
+                Role = dto.Role,
+                Department = dto.Department,
+                Email = dto.Email,
+                Phone = dto.Phone,
+                Shift = dto.Shift
+            };
+
             await _repository.AddAsync(staff);
             await _repository.SaveChangesAsync();
+
             _logger.LogInformation("Staff {StaffId} ({Name}) created in {Department}", staff.Id, staff.FullName, staff.Department);
             return CreatedAtAction(nameof(GetById), new { id = staff.Id }, staff);
         }
 
         [HttpPut("{id:guid}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] Staff updated)
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateStaffDto dto)
         {
             var staff = await _repository.GetByIdAsync(id);
-            if (staff is null) return NotFound();
-            staff.FullName = updated.FullName;
-            staff.Role = updated.Role;
-            staff.Department = updated.Department;
-            staff.Email = updated.Email;
-            staff.Phone = updated.Phone;
-            staff.Shift = updated.Shift;
+            if (staff is null || !staff.IsActive) 
+                return NotFound(new
+                { message = $"Staff member {id} not found." }
+                );
+
+            staff.FullName = dto.FullName;
+            staff.Role = dto.Role;
+            staff.Department = dto.Department;
+            staff.Email = dto.Email;
+            staff.Phone = dto.Phone;
+            staff.Shift = dto.Shift;
+
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Staff {StaffId} updated by {User}", id, User.Identity?.Name);
             return Ok(staff);
@@ -68,7 +93,11 @@ namespace Hospital.StaffService.Controllers
         public async Task<IActionResult> Deactivate(Guid id)
         {
             var staff = await _repository.GetByIdAsync(id);
-            if (staff is null || !staff.IsActive) return NotFound(new { message = $"Staff member {id} not found." });
+            if (staff is null || !staff.IsActive) 
+                return NotFound(new 
+                { message = $"Staff member {id} not found." }
+                );
+
             staff.IsActive = false;
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Staff {StaffId} ({Name}) soft-deleted by {User}", id, staff.FullName, User.Identity?.Name);

@@ -25,6 +25,8 @@
 
   <ItemGroup>
     <Folder Include="Logs\" />
+    <Folder Include="DTOs\" />
+    <Folder Include="Validators\" />
   </ItemGroup>
 
 </Project>

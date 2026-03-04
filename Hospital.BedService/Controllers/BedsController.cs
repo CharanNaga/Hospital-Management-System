@@ -11,10 +11,11 @@ namespace Hospital.BedService.Controllers
     public class BedsController : ControllerBase
     {
         private readonly IBedRepository _repository;
-
-        public BedsController(IBedRepository repository)
+        private readonly ILogger<BedsController> _logger;
+        public BedsController(IBedRepository repository, ILogger<BedsController> logger)
         {
             _repository = repository;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -29,7 +30,7 @@ namespace Hospital.BedService.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var bed = await _repository.GetByIdAsync(id);
-            return bed is null ? NotFound() : Ok(bed);
+            return bed is null ? NotFound(new { message = $"Bed {id} not found." }) : Ok(bed);
         }
 
         [HttpPost]
@@ -37,6 +38,7 @@ namespace Hospital.BedService.Controllers
         {
             await _repository.AddAsync(bed);
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Bed {BedId} ({BedNumber}) created in ward {Ward}", bed.Id, bed.BedNumber, bed.Ward);
             return CreatedAtAction(nameof(GetById), new { id = bed.Id }, bed);
         }
 
@@ -51,6 +53,7 @@ namespace Hospital.BedService.Controllers
             bed.PatientId = patientId;
             bed.OccupiedSince = DateTime.UtcNow;
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Bed {BedId} assigned to patient {PatientId}", id, patientId);
             return Ok(bed);
         }
 
@@ -58,12 +61,13 @@ namespace Hospital.BedService.Controllers
         public async Task<IActionResult> Release(Guid id)
         {
             var bed = await _repository.GetByIdAsync(id);
-            if (bed is null) return NotFound();
+            if (bed is null) return NotFound(new { message = $"Bed {id} not found." });
 
             bed.IsOccupied = false;
             bed.PatientId = null;
             bed.OccupiedSince = null;
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Bed {BedId} released (was assigned to patient {PatientId})", id, bed.PatientId);
             return Ok(bed);
         }
     }

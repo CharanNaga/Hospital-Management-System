@@ -12,11 +12,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthRepository _repository;
     private readonly IConfiguration _config;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthRepository repository, IConfiguration config)
+    public AuthController(IAuthRepository repository, IConfiguration config, ILogger<AuthController> logger)
     {
         _repository = repository;
         _config = config;
+        _logger = logger;
     }
 
     [AllowAnonymous]
@@ -25,9 +27,12 @@ public class AuthController : ControllerBase
     {
         var user = await _repository.ValidateUserAsync(request.Username, request.Password);
         if (user == null)
+        {
+            _logger.LogWarning("Login failed for username: {Username}", request.Username);
             return Unauthorized(new { message = "Invalid credentials" });
-
+        }
         var token = GenerateJwtToken(user);
+        _logger.LogInformation("User {Username} logged in successfully", user.Username);
         return Ok(new { token, role = user.Role, expires = DateTime.UtcNow.AddHours(2) });
     }
 
@@ -44,6 +49,7 @@ public class AuthController : ControllerBase
         };
         await _repository.AddUserAsync(user);
         await _repository.SaveChangesAsync();
+        _logger.LogInformation("User {Username} registered with role {Role}", user.Username, user.Role);
         return Ok(new { message = "User registered successfully", userId = user.Id });
     }
 

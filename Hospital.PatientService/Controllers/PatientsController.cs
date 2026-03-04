@@ -8,10 +8,12 @@ using Microsoft.AspNetCore.Mvc;
 public class PatientsController : ControllerBase
 {
     private readonly IPatientRepository _repository;
+    private readonly ILogger<PatientsController> _logger;
 
-    public PatientsController(IPatientRepository repository)
+    public PatientsController(IPatientRepository repository, ILogger<PatientsController> logger)
     {
         _repository = repository;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -22,7 +24,7 @@ public class PatientsController : ControllerBase
     public async Task<IActionResult> GetById(Guid id)
     {
         var patient = await _repository.GetByIdAsync(id);
-        return patient is null ? NotFound() : Ok(patient);
+        return patient is null ? NotFound(new { message = $"Patient {id} not found." }) : Ok(patient);
     }
 
     [HttpPost]
@@ -30,6 +32,7 @@ public class PatientsController : ControllerBase
     {
         await _repository.AddAsync(patient);
         await _repository.SaveChangesAsync();
+        _logger.LogInformation("Patient {PatientId} created: {Name}", patient.Id, patient.FullName);
         return CreatedAtAction(nameof(GetById), new { id = patient.Id }, patient);
     }
 
@@ -38,9 +41,10 @@ public class PatientsController : ControllerBase
     public async Task<IActionResult> Delete(Guid id)
     {
         var patient = await _repository.GetByIdAsync(id);
-        if (patient is null) return NotFound();
+        if (patient is null) return NotFound(new { message = $"Patient {id} not found." });
         _repository.Remove(patient);
         await _repository.SaveChangesAsync();
+        _logger.LogInformation("Patient {PatientId} deleted by {User}", id, User.Identity?.Name);
         return NoContent();
     }
 }

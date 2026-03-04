@@ -11,10 +11,13 @@ namespace Hospital.StaffService.Controllers
     public class StaffController : ControllerBase
     {
         private readonly IStaffRepository _repository;
+        private readonly ILogger<StaffController> _logger;
 
-        public StaffController(IStaffRepository repository)
+
+        public StaffController(IStaffRepository repository, ILogger<StaffController> logger)
         {
             _repository = repository;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -25,7 +28,7 @@ namespace Hospital.StaffService.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var staff = await _repository.GetByIdAsync(id);
-            return staff is null ? NotFound() : Ok(staff);
+            return staff is null ? NotFound(new { message = $"Staff member {id} not found." }) : Ok(staff);
         }
 
         [HttpGet("department/{department}")]
@@ -38,6 +41,7 @@ namespace Hospital.StaffService.Controllers
         {
             await _repository.AddAsync(staff);
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Staff {StaffId} ({Name}) created in {Department}", staff.Id, staff.FullName, staff.Department);
             return CreatedAtAction(nameof(GetById), new { id = staff.Id }, staff);
         }
 
@@ -54,6 +58,7 @@ namespace Hospital.StaffService.Controllers
             staff.Phone = updated.Phone;
             staff.Shift = updated.Shift;
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Staff {StaffId} updated by {User}", id, User.Identity?.Name);
             return Ok(staff);
         }
 
@@ -63,9 +68,10 @@ namespace Hospital.StaffService.Controllers
         public async Task<IActionResult> Deactivate(Guid id)
         {
             var staff = await _repository.GetByIdAsync(id);
-            if (staff is null) return NotFound();
+            if (staff is null || !staff.IsActive) return NotFound(new { message = $"Staff member {id} not found." });
             staff.IsActive = false;
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Staff {StaffId} ({Name}) soft-deleted by {User}", id, staff.FullName, User.Identity?.Name);
             return NoContent();
         }
     }

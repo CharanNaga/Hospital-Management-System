@@ -10,10 +10,12 @@ namespace Hospital.AppointmentService.Controllers
     public class AppointmentsController : ControllerBase
     {
         private readonly IAppointmentRepository _repository;
+        private readonly ILogger<AppointmentsController> _logger;
 
-        public AppointmentsController(IAppointmentRepository repository)
+        public AppointmentsController(IAppointmentRepository repository, ILogger<AppointmentsController> logger)
         {
             _repository = repository;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -25,7 +27,7 @@ namespace Hospital.AppointmentService.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var appt = await _repository.GetByIdAsync(id);
-            return appt is null ? NotFound() : Ok(appt);
+            return appt is null ? NotFound(new { message = "Appointment not found." }) : Ok(appt);
         }
 
         [HttpPost]
@@ -33,6 +35,7 @@ namespace Hospital.AppointmentService.Controllers
         {
             await _repository.AddAsync(appointment);
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Appointment {Id} created for Patient {PatientId}", appointment.Id, appointment.PatientId);
             return CreatedAtAction(nameof(GetById), new { id = appointment.Id }, appointment);
         }
 
@@ -43,6 +46,7 @@ namespace Hospital.AppointmentService.Controllers
             if (appt is null) return NotFound();
             appt.Status = status;
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Appointment {Id} status changed {Old} → {New}", id, appt.Status, status);
             return Ok(appt);
         }
     }

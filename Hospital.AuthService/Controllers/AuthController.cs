@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using static Hospital.AuthService.DTOs.AuthDtos;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -23,7 +24,7 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         var user = await _repository.ValidateUserAsync(request.Username, request.Password);
         if (user == null)
@@ -38,7 +39,7 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
     {
         var hashed = BCrypt.Net.BCrypt.HashPassword(request.Password);
         var user = new User
@@ -74,5 +75,3 @@ public class AuthController : ControllerBase
     }
 }
 
-public record LoginRequest(string Username, string Password);
-public record RegisterRequest(string Username, string Password, string? Role);

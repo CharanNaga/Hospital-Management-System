@@ -1,4 +1,6 @@
-﻿using Hospital.AuthService.Data;
+﻿using FluentValidation;
+using FluentValidation.AspNetCore;
+using Hospital.AuthService.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -58,6 +60,11 @@ builder.Services.AddAuthorization();
 
 //Swagger with JWT Support
 builder.Services.AddControllers();
+
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

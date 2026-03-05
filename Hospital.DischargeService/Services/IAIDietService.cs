@@ -1,4 +1,4 @@
-﻿namespace Hospital.DischargeService.Repositories
+﻿namespace Hospital.DischargeService.Services
 {
     public interface IAIDietService
     {

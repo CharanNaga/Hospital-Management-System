@@ -2,10 +2,12 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Hospital.DischargeService.Data;
 using Hospital.DischargeService.Repositories;
+using Hospital.DischargeService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
 using Serilog;
 using System.Text;
 
@@ -35,7 +37,13 @@ builder.Services.AddDbContext<DischargeDbContext>(options =>
     ));
 
 builder.Services.AddScoped<IDischargeRepository, DischargeRepository>();
+
+builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("Gemini"));
+builder.Services.AddHttpClient("gemini");
+var geminiKey = builder.Configuration["Gemini:ApiKey"];
 builder.Services.AddScoped<IAIDietService, AIDietService>();
+
+builder.Services.AddScoped<IQuestPdfReportService, QuestPdfReportService>();    
 builder.Services.AddHttpClient();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -81,6 +89,10 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddHealthChecks()
     .AddSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")!);
+
+
+QuestPDF.Settings.License = LicenseType.Community;
+
 
 var app = builder.Build();
 app.UseSwagger();

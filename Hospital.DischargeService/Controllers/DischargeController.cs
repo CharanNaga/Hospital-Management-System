@@ -1,6 +1,7 @@
 ﻿using Hospital.DischargeService.DTOs;
 using Hospital.DischargeService.Models;
 using Hospital.DischargeService.Repositories;
+using Hospital.DischargeService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,17 +12,20 @@ public class DischargeController : ControllerBase
 {
     private readonly IDischargeRepository _repository;
     private readonly IAIDietService _ai;
+    private readonly IQuestPdfReportService _pdfReportService;
     private readonly ILogger<DischargeController> _logger;
 
 
     public DischargeController(
         IDischargeRepository repository,
         IAIDietService ai,
+        IQuestPdfReportService pdfReportService,
         ILogger<DischargeController> logger
         )
     {
         _repository = repository;
         _ai = ai;
+        _pdfReportService = pdfReportService;
         _logger = logger;
     }
 
@@ -64,5 +68,22 @@ public class DischargeController : ControllerBase
 
         _logger.LogInformation("Discharge created: {Id} for Patient {PatientId}", summary.Id, summary.PatientId);
         return CreatedAtAction(nameof(GetById), new { id = summary.Id }, summary);
+    }
+
+    // ── GET PDF download ─────────────────────────────────────────────────────
+    [HttpGet("{id:guid}/pdf")]
+    public async Task<IActionResult> DownloadPdf(Guid id)
+    {
+        var summary = await _repository.GetByIdAsync(id);
+        if (summary is null) 
+            return NotFound(new
+            { message = "Discharge summary not found." }
+            );
+
+        var pdfBytes = _pdfReportService.GenerateDischargePdf(summary);
+        var fileName = $"DischargeSummary_{summary.PatientName?.Replace(" ", "_")}_{summary.DischargedOn:yyyyMMdd}.pdf";
+
+        _logger.LogInformation("PDF downloaded for discharge {Id}", id);
+        return File(pdfBytes, "application/pdf", fileName);
     }
 }

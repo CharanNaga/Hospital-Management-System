@@ -34,8 +34,17 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+
     public async Task<IActionResult> Create([FromBody] CreatePatientDto dto)
     {
+        if (await _repository.EmailExistsAsync(dto.Email))
+        {
+            _logger.LogWarning("Duplicate patient email attempt: {Email}", dto.Email);
+            return Conflict(new { message = $"A patient with email '{dto.Email}' already exists." });
+        }
+
+
         var patient = new Patient
         {
             FullName = dto.FullName,
@@ -63,6 +72,10 @@ public class PatientsController : ControllerBase
         if (patient is null)
             return NotFound(new
             { message = $"Patient {id} not found." });
+
+        if (await _repository.EmailExistsAsync(dto.Email, excludeId: id))
+            return Conflict(new { message = $"Email '{dto.Email}' is used by another patient." });
+
 
         patient.FullName = dto.FullName;
         patient.Age = dto.Age;

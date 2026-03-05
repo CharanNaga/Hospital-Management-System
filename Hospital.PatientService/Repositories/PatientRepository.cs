@@ -17,6 +17,11 @@ public class PatientRepository : IPatientRepository
     public async Task<Patient?> GetByIdAsync(Guid id) =>
         await _context.Patients.FindAsync(id);
 
+    public async Task<bool> EmailExistsAsync(string email, Guid? excludeId = null)
+        => await _context.Patients.AnyAsync(p =>
+            p.Email.ToLower() == email.ToLower() && p.Id != excludeId);
+
+
     public async Task AddAsync(Patient patient)
     {
         await _context.Patients.AddAsync(patient);

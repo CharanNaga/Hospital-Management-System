@@ -52,9 +52,19 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [HttpPost("register")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
 
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
     {
+        // Duplicate username guard
+        if (await _repository.UsernameExistsAsync(dto.Username))
+        {
+            _logger.LogWarning("Registration failed — duplicate username: {Username}", dto.Username);
+            return Conflict(new
+            { message = $"Username '{dto.Username}' is already taken." }
+            );
+        }
+
         var hashed = BCrypt.Net.BCrypt.HashPassword(dto.Password);
         var user = new User
         {

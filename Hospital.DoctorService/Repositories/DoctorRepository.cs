@@ -16,6 +16,10 @@ public class DoctorRepository : IDoctorRepository
     public async Task<Doctor?> GetByIdAsync(Guid id)
         => await _context.Doctors.FindAsync(id);
 
+    public async Task<bool> EmailExistsAsync(string email, Guid? excludeId = null)
+        => await _context.Doctors.AnyAsync(d =>
+            d.Email.ToLower() == email.ToLower() && d.Id != excludeId);
+
     public async Task AddAsync(Doctor doctor)
         => await _context.Doctors.AddAsync(doctor);
 

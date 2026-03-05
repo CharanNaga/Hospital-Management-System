@@ -21,6 +21,11 @@ namespace Hospital.BedService.Repositories
         public async Task<Bed?> GetByIdAsync(Guid id)
             => await _context.Beds.FindAsync(id);
 
+        public async Task<bool> BedNumberExistsAsync(string bedNumber, Guid? excludeId = null)
+        => await _context.Beds.AnyAsync(b =>
+            b.BedNumber.ToUpper() == bedNumber.ToUpper() && b.Id != excludeId);
+
+
         public async Task AddAsync(Bed bed)
             => await _context.Beds.AddAsync(bed);
 

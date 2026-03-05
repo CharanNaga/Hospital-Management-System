@@ -7,6 +7,7 @@ namespace Hospital.StaffService.Repositories
         Task<IEnumerable<Staff>> GetAllAsync();
         Task<Staff?> GetByIdAsync(Guid id);
         Task<IEnumerable<Staff>> GetByDepartmentAsync(string department);
+        Task<bool> EmailExistsAsync(string email, Guid? excludeId = null);
         Task AddAsync(Staff staff);
         void Remove(Staff staff);
         Task SaveChangesAsync();

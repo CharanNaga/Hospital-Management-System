@@ -42,6 +42,14 @@ namespace Hospital.BedService.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateBedDto dto)
         {
+            // Duplicate bed number guard
+            if (await _repository.BedNumberExistsAsync(dto.BedNumber))
+            {
+                _logger.LogWarning("Duplicate bed number: {BedNumber}", dto.BedNumber);
+                return Conflict(new { message = $"Bed number '{dto.BedNumber}' already exists." });
+            }
+
+
             var bed = new Bed
             { 
                 BedNumber = dto.BedNumber,
@@ -87,9 +95,14 @@ namespace Hospital.BedService.Controllers
                 { message = $"Bed {id} not found." }
                 );
 
+            if (!bed.IsOccupied)
+                return BadRequest(new { message = $"Bed {bed.BedNumber} is not currently occupied." });
+
+
             bed.IsOccupied = false;
             bed.PatientId = null;
             bed.OccupiedSince = null;
+
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Bed {BedId} released (was assigned to patient {PatientId})", id, bed.PatientId);
             return Ok(bed);

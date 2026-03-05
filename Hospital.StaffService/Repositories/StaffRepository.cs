@@ -24,6 +24,12 @@ namespace Hospital.StaffService.Repositories
                 .Where(s => s.Department == department && s.IsActive)
                 .ToListAsync();
 
+        public async Task<bool> EmailExistsAsync(string email, Guid? excludeId = null)
+        => await _context.StaffMembers.AnyAsync(s =>
+            s.IsActive &&
+            s.Email.ToLower() == email.ToLower() &&
+            s.Id != excludeId);
+
         public async Task AddAsync(Staff staff)
             => await _context.StaffMembers.AddAsync(staff);
 

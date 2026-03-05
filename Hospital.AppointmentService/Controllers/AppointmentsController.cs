@@ -43,6 +43,12 @@ namespace Hospital.AppointmentService.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAppointmentDto dto)
         {
+            if (await _repository.HasConflictAsync(dto.DoctorId, dto.AppointmentDate))
+            {
+                _logger.LogWarning("Booking conflict for DoctorId={DoctorId} at {Date}", dto.DoctorId, dto.AppointmentDate);
+                return Conflict(new { message = "Doctor already has an appointment within 30 minutes of this time slot." });
+            }
+
             var appointment = new Appointment
             {
                 PatientId = dto.PatientId,
@@ -59,9 +65,12 @@ namespace Hospital.AppointmentService.Controllers
                 try
                 {
                     await _emailService.SendAppointmentConfirmationAsync(
-                        dto.PatientEmail, dto.PatientName,
-                        dto.DoctorName, dto.DoctorEmail,
-                        dto.AppointmentDate, dto.Notes);
+                        dto.PatientEmail, 
+                        dto.PatientName ?? "Patient",
+                        dto.DoctorName ?? "Doctor",
+                        dto.DoctorEmail,
+                        dto.AppointmentDate,
+                        dto.Notes ?? string.Empty);
                 }
                 catch (Exception ex)
                 { _logger.LogError(ex, "Failed to send appointment email"); }
@@ -84,6 +93,9 @@ namespace Hospital.AppointmentService.Controllers
                 return NotFound(new
                 { message = "Appointment not found." }
                 );
+            // cannot change a Completed/Cancelled appointment
+            if (appt.Status is "Completed" or "Cancelled")
+                return UnprocessableEntity(new { message = $"Cannot change status of a {appt.Status} appointment." });
 
             var oldStatus = appt.Status;
             appt.Status = dto.Status;

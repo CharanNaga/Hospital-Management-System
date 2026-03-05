@@ -48,6 +48,14 @@ namespace Hospital.StaffService.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateStaffDto dto)
         {
+            // Duplicate email guard (active staff only)
+            if (await _repository.EmailExistsAsync(dto.Email))
+            {
+                _logger.LogWarning("Duplicate staff email: {Email}", dto.Email);
+                return Conflict(new { message = $"An active staff member with email '{dto.Email}' already exists." });
+            }
+
+
             var staff = new Staff
             {
                 FullName = dto.FullName,
@@ -74,6 +82,10 @@ namespace Hospital.StaffService.Controllers
                 return NotFound(new
                 { message = $"Staff member {id} not found." }
                 );
+
+            // Duplicate email guard (exclude this record)
+            if (await _repository.EmailExistsAsync(dto.Email, excludeId: id))
+                return Conflict(new { message = $"Email '{dto.Email}' is used by another active staff member." });
 
             staff.FullName = dto.FullName;
             staff.Role = dto.Role;

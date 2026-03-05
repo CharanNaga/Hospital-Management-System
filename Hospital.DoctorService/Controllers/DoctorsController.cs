@@ -36,6 +36,14 @@ public class DoctorsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateDoctorDto dto)
     {
+        // Duplicate email guard
+        if (await _repository.EmailExistsAsync(dto.Email))
+        {
+            _logger.LogWarning("Duplicate doctor email: {Email}", dto.Email);
+            return Conflict(new { message = $"A doctor with email '{dto.Email}' already exists." });
+        }
+
+
         var doctor = new Doctor
         {
             FullName = dto.FullName,
@@ -60,6 +68,10 @@ public class DoctorsController : ControllerBase
             return NotFound(new
             { message = $"Doctor {id} not found." }
             );
+
+        // Duplicate email guard (exclude this doctor's own email)
+        if (await _repository.EmailExistsAsync(dto.Email, excludeId: id))
+            return Conflict(new { message = $"Email '{dto.Email}' is used by another doctor." });
 
 
         doctor.FullName = dto.FullName;

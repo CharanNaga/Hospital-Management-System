@@ -22,6 +22,11 @@ public class AuthRepository : IAuthRepository
         return BCrypt.Net.BCrypt.Verify(password, user.Password) ? user : null;
     }
 
+    public async Task<bool> UsernameExistsAsync(string username)
+        => await _context.Users.AnyAsync(u =>
+            u.Username.ToLower() == username.ToLower());
+
+
     public async Task AddUserAsync(User user)
     {
         await _context.Users.AddAsync(user);

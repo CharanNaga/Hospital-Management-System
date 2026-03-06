@@ -29,7 +29,7 @@ namespace Hospital.BedService.Migrations
 
                     b.Property<string>("BedNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("IsOccupied")
                         .HasColumnType("bit");
@@ -42,9 +42,14 @@ namespace Hospital.BedService.Migrations
 
                     b.Property<string>("Ward")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BedNumber")
+                        .IsUnique();
+
+                    b.HasIndex("Ward");
 
                     b.ToTable("Beds");
                 });

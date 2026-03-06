@@ -8,4 +8,11 @@ public class DoctorDbContext : DbContext
         : base(options) { }
 
     public DbSet<Doctor> Doctors => Set<Doctor>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Doctor>()
+            .HasIndex(d => d.Email)
+            .IsUnique();
+    }
 }

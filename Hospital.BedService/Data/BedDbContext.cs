@@ -8,4 +8,15 @@ public class BedDbContext : DbContext
         : base(options) { }
 
     public DbSet<Bed> Beds => Set<Bed>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Bed>()
+            .HasIndex(b => b.BedNumber)
+            .IsUnique();
+
+        modelBuilder.Entity<Bed>()
+            .HasIndex(b => b.Ward);
+    }
+
 }

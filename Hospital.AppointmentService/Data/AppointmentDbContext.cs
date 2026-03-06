@@ -9,5 +9,16 @@ namespace Hospital.AppointmentService.Data
             : base(options) { }
 
         public DbSet<Appointment> Appointments => Set<Appointment>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Composite index on DoctorId + AppointmentDate for fast conflict queries
+            modelBuilder.Entity<Appointment>()
+                .HasIndex(a => new { a.DoctorId, a.AppointmentDate });
+
+            modelBuilder.Entity<Appointment>()
+                .HasIndex(a => a.PatientId);
+        }
+
     }
 }

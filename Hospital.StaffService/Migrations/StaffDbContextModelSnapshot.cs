@@ -30,11 +30,11 @@ namespace Hospital.StaffService.Migrations
 
                     b.Property<string>("Department")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -59,6 +59,12 @@ namespace Hospital.StaffService.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Department");
+
+                    b.HasIndex("Email");
+
+                    b.HasIndex("IsActive");
 
                     b.ToTable("StaffMembers");
                 });

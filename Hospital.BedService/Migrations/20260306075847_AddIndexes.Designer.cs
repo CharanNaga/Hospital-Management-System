@@ -3,16 +3,19 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Hospital.DoctorService.Migrations
+namespace Hospital.BedService.Migrations
 {
-    [DbContext(typeof(DoctorDbContext))]
-    partial class DoctorDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(BedDbContext))]
+    [Migration("20260306075847_AddIndexes")]
+    partial class AddIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,30 +24,37 @@ namespace Hospital.DoctorService.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Hospital.DoctorService.Models.Doctor", b =>
+            modelBuilder.Entity("Hospital.BedService.Models.Bed", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Email")
+                    b.Property<string>("BedNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsOccupied")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("Specialization")
+                    b.Property<DateTime?>("OccupiedSince")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Ward")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
+                    b.HasIndex("BedNumber")
                         .IsUnique();
 
-                    b.ToTable("Doctors");
+                    b.HasIndex("Ward");
+
+                    b.ToTable("Beds");
                 });
 #pragma warning restore 612, 618
         }

@@ -66,6 +66,10 @@ namespace Hospital.DischargeService.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DischargedOn");
+
+                    b.HasIndex("PatientId");
+
                     b.ToTable("DischargeSummaries");
                 });
 #pragma warning restore 612, 618

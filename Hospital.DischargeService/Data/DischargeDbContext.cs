@@ -9,5 +9,15 @@ namespace Hospital.DischargeService.Data
             : base(options) { }
 
         public DbSet<DischargeSummary> DischargeSummaries => Set<DischargeSummary>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DischargeSummary>()
+                .HasIndex(d => d.PatientId);
+
+            modelBuilder.Entity<DischargeSummary>()
+                .HasIndex(d => d.DischargedOn);
+        }
+
     }
 }

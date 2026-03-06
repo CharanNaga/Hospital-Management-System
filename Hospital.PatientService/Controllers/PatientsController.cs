@@ -34,7 +34,6 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
 
     public async Task<IActionResult> Create([FromBody] CreatePatientDto dto)
     {

@@ -41,7 +41,7 @@ public class EmailService : IEmailService
         var fromEmail = _config["SendGrid:FromEmail"] ?? "noreply@hospital.com";
         var fromName = _config["SendGrid:FromName"] ?? "Hospital Management";
 
-        if (string.IsNullOrEmpty(apiKey) || apiKey == "USE_PAPERCUT_LOCALLY")
+        if (string.IsNullOrEmpty(apiKey))
         {
             // Local mode: send via SMTP to PaperCut
             await SendViaSmtpAsync(to, toName, subject, html, fromEmail, fromName);

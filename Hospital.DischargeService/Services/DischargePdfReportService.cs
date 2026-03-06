@@ -65,7 +65,7 @@ namespace Hospital.DischargeService.Services
                              .FontSize(12).FontColor("#2E75B6");
                     });
 
-                    row.ConstantItem(120).AlignRight().Column(inner =>
+                    row.ConstantItem(130).AlignRight().Column(inner =>
                     {
                         inner.Item().Text($"Date: {DateTime.Now:dd MMM yyyy}").FontSize(9).FontColor("#666666");
                         inner.Item().Text($"Ref: {DateTime.Now:yyyyMMddHHmm}").FontSize(9).FontColor("#666666");
@@ -101,10 +101,15 @@ namespace Hospital.DischargeService.Services
 
                     InfoRow(table, "Patient Name", s.PatientName ?? "—",
                                    "Patient ID", s.PatientId.ToString()[..8] + "...");
+
                     InfoRow(table, "Age", $"{s.PatientAge} years",
-                                   "Gender", "—");
-                    InfoRow(table, "Admitted", "—",
+                                   "Gender", s.PatientGender ?? "Not Specified");
+
+                    InfoRow(table, "Admitted", s.AdmittedOn.HasValue
+                                           ? s.AdmittedOn.Value.ToString("dd MMM yyyy HH:mm")
+                                           : "Not recorded",
                                    "Discharged", s.DischargedOn.ToString("dd MMM yyyy HH:mm"));
+
                     InfoRow(table, "Discharging Dr", s.DischargingDoctorId.ToString()[..8] + "...",
                                    "Report ID", s.Id.ToString()[..8] + "...");
                 });
@@ -133,7 +138,7 @@ namespace Hospital.DischargeService.Services
                 });
 
                 // ── AI Diet Recommendation ──────────────────────────────────────
-                col.Item().Element(e => SectionTitle(e, "AI Diet Recommendation (Powered by Claude)"));
+                col.Item().Element(e => SectionTitle(e, "AI Diet Recommendation (Powered by Google Gemini)"));
                 col.Item()
                    .Background("#F0F6FF")
                    .Border(0.5f).BorderColor("#BDD7EE")

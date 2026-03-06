@@ -6,6 +6,10 @@
         public Guid PatientId { get; set; }
         public string PatientName { get; set; } = string.Empty;
         public int PatientAge { get; set; }
+
+        public string PatientGender { get; set; } = string.Empty;   
+        public DateTime? AdmittedOn { get; set; }
+
         public string Diagnosis { get; set; } = string.Empty;
         public string Treatment { get; set; } = string.Empty;
         public string Medications { get; set; } = string.Empty;

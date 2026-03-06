@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using QuestPDF.Infrastructure;
 using Serilog;
 using System.Text;
 
@@ -93,10 +92,6 @@ try
 
     builder.Services.AddHealthChecks()
         .AddSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")!);
-
-
-    QuestPDF.Settings.License = LicenseType.Community;
-
 
     var app = builder.Build();
     app.UseSwagger();

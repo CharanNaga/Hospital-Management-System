@@ -4,6 +4,7 @@ public record DischargeSummaryDto(
     Guid PatientId,
     string PatientName,
     int PatientAge,
+    string PatientGender,
     string Diagnosis,
     string Treatment,
     string Medications,

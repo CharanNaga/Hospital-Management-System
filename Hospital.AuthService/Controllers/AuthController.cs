@@ -51,8 +51,6 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("register")]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
 
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
     {

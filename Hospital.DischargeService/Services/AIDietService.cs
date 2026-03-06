@@ -7,7 +7,7 @@ namespace Hospital.DischargeService.Services
     public class GeminiSettings
     {
         public string ApiKey { get; set; } = string.Empty;
-        public string Model { get; set; } = "gemini-1.5-flash";
+        public string Model { get; set; } = "gemini-2.0-flash";
         public int MaxTokens { get; set; } = 400;
         public int TimeoutSecs { get; set; } = 30;
     }
@@ -55,7 +55,8 @@ Plain prose only — no bullet points, no headers, no disclaimers.";
                 }
             });
 
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{_settings.Model}:generateContent?key={_settings.ApiKey}";
+            //var url = $"https://generativelanguage.googleapis.com/v1beta/models/{_settings.Model}:generateContent?key={_settings.ApiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1/models/{_settings.Model}:generateContent?key={_settings.ApiKey}";
 
             using var request = new HttpRequestMessage(HttpMethod.Post, url)
             {

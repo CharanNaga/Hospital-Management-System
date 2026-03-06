@@ -17,6 +17,11 @@ namespace Hospital.DischargeService.Validators
             RuleFor(x => x.PatientAge)
                 .InclusiveBetween(0, 150).WithMessage("PatientAge must be between 0 and 150.");
 
+            RuleFor(x => x.PatientGender)
+                .Must(g => string.IsNullOrEmpty(g) || new[] { "Male", "Female", "Other" }.Contains(g))
+                .WithMessage("PatientGender must be Male, Female, Other, or empty.");
+
+
             RuleFor(x => x.Diagnosis)
                 .NotEmpty().WithMessage("Diagnosis is required.")
                 .MaximumLength(500).WithMessage("Diagnosis cannot exceed 500 characters.");

@@ -21,23 +21,18 @@ namespace Hospital.DischargeService.Services
                 {
                     container.Page(page =>
                     {
-                        // ── Page setup ─────────────────────────────────────────
                         page.Size(PageSizes.A4);
                         page.Margin(40);
                         page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(10));
 
-                        // ── Header ─────────────────────────────────────────────
                         page.Header().Element(ComposeHeader);
-
-                        // ── Content ────────────────────────────────────────────
                         page.Content().Element(content => ComposeContent(content, s));
-
-                        // ── Footer ─────────────────────────────────────────────
                         page.Footer().Element(ComposeFooter);
                     });
                 });
 
-                _logger.LogInformation("PDF generated for patient {PatientName} (discharge {Id})", s.PatientName, s.Id);
+                _logger.LogInformation("PDF generated for {PatientName} (discharge {Id})",
+                    s.PatientName, s.Id);
                 return document.GeneratePdf();
             }
             catch (Exception ex)
@@ -47,7 +42,7 @@ namespace Hospital.DischargeService.Services
             }
         }
 
-        // ─── Header ─────────────────────────────────────────────────────────────
+        // ─── Header ──────────────────────────────────────────────────────────────
         private static void ComposeHeader(IContainer container)
         {
             container.Column(col =>
@@ -59,7 +54,6 @@ namespace Hospital.DischargeService.Services
                         inner.Item()
                              .Text("🏥 Hospital Management System")
                              .Bold().FontSize(18).FontColor("#1F4E79");
-
                         inner.Item()
                              .Text("Discharge Summary Report")
                              .FontSize(12).FontColor("#2E75B6");
@@ -67,54 +61,68 @@ namespace Hospital.DischargeService.Services
 
                     row.ConstantItem(130).AlignRight().Column(inner =>
                     {
-                        inner.Item().Text($"Date: {DateTime.Now:dd MMM yyyy}").FontSize(9).FontColor("#666666");
-                        inner.Item().Text($"Ref: {DateTime.Now:yyyyMMddHHmm}").FontSize(9).FontColor("#666666");
+                        inner.Item()
+                             .Text($"Date: {DateTime.Now:dd MMM yyyy}")
+                             .FontSize(9).FontColor("#666666");
+                        inner.Item()
+                             .Text($"Ref: {DateTime.Now:yyyyMMddHHmm}")
+                             .FontSize(9).FontColor("#666666");
                     });
                 });
 
-                col.Item().PaddingTop(4)
-                   .BorderBottom(2).BorderColor("#2E75B6")
-                   .Height(1);
-
+                col.Item().PaddingTop(4).BorderBottom(2).BorderColor("#2E75B6").Height(1);
                 col.Item().Height(8);
             });
         }
 
-        // ─── Content ────────────────────────────────────────────────────────────
+        // ─── Content ─────────────────────────────────────────────────────────────
         private static void ComposeContent(IContainer container, DischargeSummary s)
         {
+            // ── FIX: Resolve display values BEFORE building PDF ──────────────────
+            // These were showing "—" before because the model fields didn't exist.
+            // Now they read directly from the DischargeSummary entity.
+            var genderDisplay = string.IsNullOrWhiteSpace(s.PatientGender)
+                                      ? "Not specified"
+                                      : s.PatientGender;
+
+            var admittedDisplay = s.AdmittedOn.HasValue
+                                      ? s.AdmittedOn.Value.ToString("dd MMM yyyy HH:mm")
+                                      : "Not recorded";
+
             container.Column(col =>
             {
                 col.Spacing(10);
 
-                // ── Patient Information ─────────────────────────────────────────
+                // ── Patient Information ───────────────────────────────────────────
                 col.Item().Element(e => SectionTitle(e, "Patient Information"));
                 col.Item().Table(table =>
                 {
                     table.ColumnsDefinition(cols =>
                     {
-                        cols.RelativeColumn(1);
-                        cols.RelativeColumn(2);
-                        cols.RelativeColumn(1);
-                        cols.RelativeColumn(2);
+                        cols.RelativeColumn(1);   // Label
+                        cols.RelativeColumn(2);   // Value
+                        cols.RelativeColumn(1);   // Label
+                        cols.RelativeColumn(2);   // Value
                     });
 
-                    InfoRow(table, "Patient Name", s.PatientName ?? "—",
-                                   "Patient ID", s.PatientId.ToString()[..8] + "...");
+                    InfoRow(table,
+                        "Patient Name", s.PatientName,
+                        "Patient ID", s.PatientId.ToString()[..8] + "...");
 
-                    InfoRow(table, "Age", $"{s.PatientAge} years",
-                                   "Gender", s.PatientGender ?? "Not Specified");
+                    InfoRow(table,
+                        "Age", $"{s.PatientAge} years",
+                        "Gender", genderDisplay);            // ← FIX: was "—"
 
-                    InfoRow(table, "Admitted", s.AdmittedOn.HasValue
-                                           ? s.AdmittedOn.Value.ToString("dd MMM yyyy HH:mm")
-                                           : "Not recorded",
-                                   "Discharged", s.DischargedOn.ToString("dd MMM yyyy HH:mm"));
+                    InfoRow(table,
+                        "Admitted", admittedDisplay,        // ← FIX: was "—"
+                        "Discharged", s.DischargedOn.ToString("dd MMM yyyy HH:mm"));
 
-                    InfoRow(table, "Discharging Dr", s.DischargingDoctorId.ToString()[..8] + "...",
-                                   "Report ID", s.Id.ToString()[..8] + "...");
+                    InfoRow(table,
+                        "Discharging Dr", s.DischargingDoctorId.ToString()[..8] + "...",
+                        "Report ID", s.Id.ToString()[..8] + "...");
                 });
 
-                // ── Clinical Summary ────────────────────────────────────────────
+                // ── Clinical Summary ──────────────────────────────────────────────
                 col.Item().Element(e => SectionTitle(e, "Clinical Summary"));
                 col.Item().Table(table =>
                 {
@@ -131,14 +139,16 @@ namespace Hospital.DischargeService.Services
                     ValueCell(table, s.Treatment);
 
                     LabelCell(table, "Medications");
-                    ValueCell(table, string.IsNullOrWhiteSpace(s.Medications) ? "None prescribed" : s.Medications);
+                    ValueCell(table, string.IsNullOrWhiteSpace(s.Medications)
+                        ? "None prescribed" : s.Medications);
 
                     LabelCell(table, "Follow-Up");
-                    ValueCell(table, string.IsNullOrWhiteSpace(s.FollowUpInstructions) ? "As needed" : s.FollowUpInstructions);
+                    ValueCell(table, string.IsNullOrWhiteSpace(s.FollowUpInstructions)
+                        ? "As needed" : s.FollowUpInstructions);
                 });
 
-                // ── AI Diet Recommendation ──────────────────────────────────────
-                col.Item().Element(e => SectionTitle(e, "AI Diet Recommendation (Powered by Google Gemini)"));
+                // ── AI Diet Recommendation ────────────────────────────────────────
+                col.Item().Element(e => SectionTitle(e, "AI Diet Recommendation (Powered by Groq / LLaMA)"));
                 col.Item()
                    .Background("#F0F6FF")
                    .Border(0.5f).BorderColor("#BDD7EE")
@@ -148,9 +158,7 @@ namespace Hospital.DischargeService.Services
                        inner.Item()
                             .Text("✨ Personalised Dietary Guidance")
                             .Bold().FontSize(10).FontColor("#1F4E79");
-
                        inner.Item().Height(4);
-
                        inner.Item()
                             .Text(string.IsNullOrWhiteSpace(s.AIDietRecommendation)
                                 ? "No diet recommendation generated."
@@ -158,7 +166,7 @@ namespace Hospital.DischargeService.Services
                             .FontSize(10).FontColor("#333333");
                    });
 
-                // ── Important Notes ─────────────────────────────────────────────
+                // ── Important Notes ───────────────────────────────────────────────
                 col.Item().Element(e => SectionTitle(e, "Important Notes"));
                 col.Item()
                    .Background("#FFF8E1")
@@ -167,13 +175,13 @@ namespace Hospital.DischargeService.Services
                    .Text(text =>
                    {
                        text.Span("⚠ ").Bold().FontColor("#E65100");
-                       text.Span("This discharge summary is generated automatically by the Hospital Management System. " +
-                                 "Please consult your treating physician for any medical queries. " +
-                                 "In case of emergency, call your nearest hospital or emergency services immediately.")
+                       text.Span("This discharge summary is generated by the Hospital Management System. " +
+                                 "Consult your treating physician for any medical queries. " +
+                                 "In an emergency, call your nearest hospital or emergency services immediately.")
                            .FontSize(9).FontColor("#555555");
                    });
 
-                // ── Signature block ─────────────────────────────────────────────
+                // ── Signature block ───────────────────────────────────────────────
                 col.Item().PaddingTop(20).Row(row =>
                 {
                     row.RelativeItem().Column(inner =>
@@ -181,9 +189,7 @@ namespace Hospital.DischargeService.Services
                         inner.Item().BorderBottom(1).BorderColor("#CCCCCC").Width(160).Height(30);
                         inner.Item().Text("Patient / Guardian Signature").FontSize(8).FontColor("#777");
                     });
-
                     row.ConstantItem(60);
-
                     row.RelativeItem().Column(inner =>
                     {
                         inner.Item().BorderBottom(1).BorderColor("#CCCCCC").Width(160).Height(30);
@@ -193,7 +199,7 @@ namespace Hospital.DischargeService.Services
             });
         }
 
-        // ─── Footer ─────────────────────────────────────────────────────────────
+        // ─── Footer ──────────────────────────────────────────────────────────────
         private static void ComposeFooter(IContainer container)
         {
             container.Column(col =>
@@ -219,10 +225,8 @@ namespace Hospital.DischargeService.Services
 
         // ─── Helpers ─────────────────────────────────────────────────────────────
         private static void SectionTitle(IContainer c, string title) =>
-            c.Background("#1F4E79")
-             .Padding(6)
-             .Text(title)
-             .Bold().FontSize(10).FontColor("#FFFFFF");
+            c.Background("#1F4E79").Padding(6)
+             .Text(title).Bold().FontSize(10).FontColor("#FFFFFF");
 
         private static void LabelCell(TableDescriptor t, string label) =>
             t.Cell().Background("#DEEAF1").Padding(6)

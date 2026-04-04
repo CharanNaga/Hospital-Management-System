@@ -41,9 +41,9 @@ try
 
     builder.Services.AddScoped<IDischargeRepository, DischargeRepository>();
 
-    builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("Gemini"));
-    builder.Services.AddHttpClient("gemini");
-    var geminiKey = builder.Configuration["Gemini:ApiKey"];
+    builder.Services.Configure<GroqSettings>(builder.Configuration.GetSection("Groq"));
+    builder.Services.AddHttpClient("groq");
+    var geminiKey = builder.Configuration["Groq:ApiKey"];
     builder.Services.AddScoped<IAIDietService, AIDietService>();
 
     builder.Services.AddScoped<IQuestPdfReportService, QuestPdfReportService>();
@@ -111,9 +111,14 @@ try
 
 }
 catch (Exception ex)
+    // FIX: HostAbortedException is thrown by EF Core design-time host factory
+    // during 'dotnet ef migrations' commands — it is NOT a real crash.
+    // Rethrowing it prevents Serilog from logging a false [FTL] error.
+    when (ex is not HostAbortedException)
 {
     Log.Fatal(ex, "DischargeService terminated unexpectedly");
 }
+
 finally
 {
     Log.CloseAndFlush();

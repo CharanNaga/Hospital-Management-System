@@ -14,16 +14,22 @@ namespace Hospital.AppointmentService.Controllers
         private readonly IAppointmentRepository _repository;
         private readonly ILogger<AppointmentsController> _logger;
         private readonly IEmailService _emailService;
+        private readonly IPatientLookupService _patientLookup;
+        private readonly IDoctorLookupService _doctorLookup;
 
         public AppointmentsController(
             IAppointmentRepository repository, 
             ILogger<AppointmentsController> logger,
-            IEmailService emailService
+            IEmailService emailService,
+            IPatientLookupService patientLookup,
+            IDoctorLookupService doctorLookup
             )
         {
             _repository = repository;
             _logger = logger;
             _emailService = emailService;
+            _patientLookup = patientLookup;
+            _doctorLookup = doctorLookup;
         }
 
         [HttpGet]
@@ -43,6 +49,23 @@ namespace Hospital.AppointmentService.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAppointmentDto dto)
         {
+            //    If PatientService is unreachable, we still book — email just won't be sent
+            var patient = await _patientLookup.GetPatientAsync(dto.PatientId);
+            if (patient is null)
+            {
+                _logger.LogWarning("PatientService did not return patient {PatientId} — " +
+                                   "appointment will be booked without patient name/email", dto.PatientId);
+            }
+
+            //  Fetch doctor details from DoctorService
+            var doctor = await _doctorLookup.GetDoctorAsync(dto.DoctorId);
+            if (doctor is null)
+            {
+                _logger.LogWarning("DoctorService did not return doctor {DoctorId} — " +
+                                   "appointment will be booked without doctor name", dto.DoctorId);
+            }
+
+
             if (await _repository.HasConflictAsync(dto.DoctorId, dto.AppointmentDate))
             {
                 _logger.LogWarning("Booking conflict for DoctorId={DoctorId} at {Date}", dto.DoctorId, dto.AppointmentDate);
@@ -55,8 +78,10 @@ namespace Hospital.AppointmentService.Controllers
                 DoctorId = dto.DoctorId,
                 AppointmentDate = dto.AppointmentDate,
                 Notes = dto.Notes,
-                PatientName = dto.PatientName,
-                DoctorName = dto.DoctorName
+                //PatientName = dto.PatientName,
+                //DoctorName = dto.DoctorName
+                PatientName = patient?.FullName ?? "Patient",
+                DoctorName = doctor?.FullName ?? "Doctor"
             };
 
             // Send email — fire-and-forget with error handling (don't fail the request)
@@ -65,10 +90,15 @@ namespace Hospital.AppointmentService.Controllers
                 try
                 {
                     await _emailService.SendAppointmentConfirmationAsync(
-                        dto.PatientEmail, 
-                        dto.PatientName ?? "Patient",
-                        dto.DoctorName ?? "Doctor",
-                        dto.DoctorEmail,
+                        //dto.PatientEmail, 
+                        //dto.PatientName ?? "Patient",
+                        //dto.DoctorName ?? "Doctor",
+                        //dto.DoctorEmail,
+
+                        patient?.Email, 
+                        patient?.FullName ?? "Patient",
+                        doctor?.FullName ?? "Doctor",
+                        doctor?.Email,
                         dto.AppointmentDate,
                         dto.Notes ?? string.Empty);
                 }

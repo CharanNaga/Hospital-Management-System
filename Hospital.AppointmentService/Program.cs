@@ -1,4 +1,4 @@
-using FluentValidation;
+ï»¿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Hospital.AppointmentService.Data;
 using Hospital.AppointmentService.Services;
@@ -18,12 +18,12 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.WithMachineName()
     .Enrich.WithThreadId()
     .WriteTo.Console(outputTemplate:
-        "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} — {Message:lj}{NewLine}{Exception}")
+        "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} â€” {Message:lj}{NewLine}{Exception}")
     .WriteTo.File(
         path: "Logs/appointment-service-.log",
         rollingInterval: RollingInterval.Day,
         retainedFileCountLimit: 30,                // Keep 30 days of logs
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} — {Message:lj}{NewLine}{Exception}")
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} â€” {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
 
 try
@@ -40,7 +40,26 @@ try
 
     builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
     builder.Services.AddScoped<IEmailService, EmailService>();
-    builder.Services.AddHttpClient(); // needed by some SendGrid versions
+   
+    builder.Services.AddHttpClient("PatientService", client =>
+    {
+        var baseUrl = builder.Configuration["ServiceUrls:PatientService"]
+                      ?? "https://localhost:7181";
+        client.BaseAddress = new Uri(baseUrl);
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
+
+    builder.Services.AddHttpClient("DoctorService", client =>
+    {
+        var baseUrl = builder.Configuration["ServiceUrls:DoctorService"]
+                      ?? "https://localhost:7215";
+        client.BaseAddress = new Uri(baseUrl);
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
+
+    builder.Services.AddScoped<IPatientLookupService, PatientLookupService>();
+    builder.Services.AddScoped<IDoctorLookupService, DoctorLookupService>();
+
 
 
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -105,7 +124,8 @@ try
     app.Run();
 
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is not HostAbortedException)
+
 {
     Log.Fatal(ex, "AppointmentService terminated unexpectedly");
 }

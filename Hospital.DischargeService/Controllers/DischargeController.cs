@@ -14,19 +14,22 @@ public class DischargeController : ControllerBase
     private readonly IAIDietService _ai;
     private readonly IQuestPdfReportService _pdfReportService;
     private readonly ILogger<DischargeController> _logger;
+    private readonly IPatientLookupService _patientLookup;
 
 
     public DischargeController(
         IDischargeRepository repository,
         IAIDietService ai,
         IQuestPdfReportService pdfReportService,
-        ILogger<DischargeController> logger
+        ILogger<DischargeController> logger,
+        IPatientLookupService patientLookup
         )
     {
         _repository = repository;
         _ai = ai;
         _pdfReportService = pdfReportService;
         _logger = logger;
+        _patientLookup = patientLookup;
     }
 
     [HttpGet]
@@ -49,11 +52,28 @@ public class DischargeController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] DischargeSummaryDto dto)
     {
+        //    This gives us FullName, Age, Gender — the caller does NOT supply these
+        var patient = await _patientLookup.GetPatientAsync(dto.PatientId);
+        if (patient is null)
+        {
+            return NotFound(new
+            {
+                message = $"Patient {dto.PatientId} was not found in PatientService. " +
+                          "Ensure the patient exists before creating a discharge record."
+            });
+        }
+
+
         var summary = new DischargeSummary
         {
             PatientId = dto.PatientId,
-            PatientName = dto.PatientName,
-            PatientAge = dto.PatientAge,
+            //PatientName = dto.PatientName,
+            //PatientAge = dto.PatientAge,
+            //PatientGender = dto.PatientGender,
+            PatientName = patient.FullName,
+            PatientAge = patient.Age,
+            PatientGender = patient.Gender,
+            AdmittedOn = dto.AdmittedOn.HasValue ? dto.AdmittedOn.Value : DateTime.UtcNow,
             Diagnosis = dto.Diagnosis,
             Treatment = dto.Treatment,
             Medications = dto.Medications,

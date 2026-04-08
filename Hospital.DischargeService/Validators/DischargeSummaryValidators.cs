@@ -11,7 +11,7 @@ namespace Hospital.DischargeService.Validators
         {
             RuleFor(x => x.PatientId)
                 .NotEmpty().WithMessage("PatientId is required.");
-
+            /*
             RuleFor(x => x.PatientName)
                 .NotEmpty().WithMessage("PatientName is required.")
                 .MaximumLength(150);
@@ -23,6 +23,7 @@ namespace Hospital.DischargeService.Validators
             RuleFor(x => x.PatientGender)
                 .Must(g => string.IsNullOrEmpty(g) || ValidGenders.Contains(g))
                 .WithMessage("PatientGender must be Male, Female, or Other (or leave empty).");
+            */
 
             RuleFor(x => x.Diagnosis)
                 .NotEmpty().WithMessage("Diagnosis is required.")

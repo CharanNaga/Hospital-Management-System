@@ -47,7 +47,15 @@ try
     builder.Services.AddScoped<IAIDietService, AIDietService>();
 
     builder.Services.AddScoped<IQuestPdfReportService, QuestPdfReportService>();
-    builder.Services.AddHttpClient();
+    builder.Services.AddHttpClient("PatientService", client =>
+    {
+        var baseUrl = builder.Configuration["ServiceUrls:PatientService"]
+                      ?? "https://localhost:7181";
+        client.BaseAddress = new Uri(baseUrl);
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
+
+    builder.Services.AddScoped<IPatientLookupService, PatientLookupService>();
 
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
@@ -110,11 +118,7 @@ try
     app.Run();
 
 }
-catch (Exception ex)
-    // FIX: HostAbortedException is thrown by EF Core design-time host factory
-    // during 'dotnet ef migrations' commands — it is NOT a real crash.
-    // Rethrowing it prevents Serilog from logging a false [FTL] error.
-    when (ex is not HostAbortedException)
+catch (Exception ex) when (ex is not HostAbortedException)
 {
     Log.Fatal(ex, "DischargeService terminated unexpectedly");
 }

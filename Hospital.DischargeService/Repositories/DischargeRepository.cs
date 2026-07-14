@@ -25,6 +25,12 @@ namespace Hospital.DischargeService.Repositories
                 .OrderByDescending(d => d.DischargedOn)
                 .ToListAsync();
 
+        public async Task<IEnumerable<DischargeSummary>> GetByDoctorIdAsync(Guid doctorId)
+            => await _context.DischargeSummaries
+                .Where(d => d.DischargingDoctorId == doctorId)
+                .OrderByDescending(d => d.DischargedOn)
+                .ToListAsync();
+
         public async Task AddAsync(DischargeSummary summary)
             => await _context.DischargeSummaries.AddAsync(summary);
 

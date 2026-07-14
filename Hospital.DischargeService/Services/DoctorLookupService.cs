@@ -5,35 +5,35 @@ using System.Text.Json;
 namespace Hospital.DischargeService.Services
 {
     // ─── Implementation ───────────────────────────────────────────────────────────
-    // PatientService requires [Authorize] on all endpoints.
+    // DoctorService requires [Authorize] on all endpoints.
     // This service reads the JWT from the current incoming HTTP request
     // (via IHttpContextAccessor) and forwards it in the outgoing call to
-    // PatientService — exactly like a browser forwards a cookie.
-    public class PatientLookupService : IPatientLookupService
+    // DoctorService — exactly like a browser forwards a cookie.
+    public class DoctorLookupService : IDoctorLookupService
     {
         private readonly HttpClient _http;
         private readonly IHttpContextAccessor _accessor;
-        private readonly ILogger<PatientLookupService> _logger;
+        private readonly ILogger<DoctorLookupService> _logger;
 
         private static readonly JsonSerializerOptions _json =
             new() { PropertyNameCaseInsensitive = true };
 
-        public PatientLookupService(
+        public DoctorLookupService(
             IHttpClientFactory factory,
             IHttpContextAccessor accessor,
-            ILogger<PatientLookupService> logger)
+            ILogger<DoctorLookupService> logger)
         {
-            _http = factory.CreateClient("PatientService");
+            _http = factory.CreateClient("DoctorService");
             _accessor = accessor;
             _logger = logger;
         }
 
-        public async Task<PatientDetails?> GetPatientAsync(Guid patientId)
+        public async Task<DoctorDetails?> GetDoctorAsync(Guid doctorId)
         {
             try
             {
                 using var request = new HttpRequestMessage(
-                HttpMethod.Get, $"api/Patients/{patientId}");
+                HttpMethod.Get, $"api/Doctors/{doctorId}");
 
                 // Forward the caller's JWT so PatientService accepts the request
                 AttachToken(request);
@@ -43,21 +43,21 @@ namespace Hospital.DischargeService.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning(
-                        "PatientService returned {Status} for patient {Id}",
-                        response.StatusCode, patientId);
+                        "DoctorService returned {Status} for doctor {Id}",
+                        response.StatusCode, doctorId);
                     return null;
                 }
 
                 var json = await response.Content.ReadAsStringAsync();
-                var patient = JsonSerializer.Deserialize<PatientLookupResponse>(json, _json);
+                var doctor = JsonSerializer.Deserialize<DoctorLookupResponse>(json, _json);
 
-                return patient is null ? null
-                    : new PatientDetails(patient.FullName, patient.Age, patient.Gender, patient.Email);
+                return doctor is null ? null
+                    : new DoctorDetails(doctor.FullName, doctor.Specialization, doctor.Email);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Failed to contact PatientService for patient {Id}", patientId);
+                    "Failed to contact DoctorService for doctor {Id}", doctorId);
                 return null;
             }
         }
@@ -81,10 +81,9 @@ namespace Hospital.DischargeService.Services
                 AuthenticationHeaderValue.Parse(authHeader);
         }
 
-        private record PatientLookupResponse(
+        private record DoctorLookupResponse(
             string FullName,
-            int Age,
-            string Gender,
+            string Specialization,
             string Email);
 
     }

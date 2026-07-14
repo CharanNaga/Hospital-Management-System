@@ -43,10 +43,16 @@ try
 
     builder.Services.Configure<GroqSettings>(builder.Configuration.GetSection("Groq"));
     builder.Services.AddHttpClient("groq");
-    var geminiKey = builder.Configuration["Groq:ApiKey"];
+    var groqKey = builder.Configuration["Groq:ApiKey"];
     builder.Services.AddScoped<IAIDietService, AIDietService>();
 
     builder.Services.AddScoped<IQuestPdfReportService, QuestPdfReportService>();
+
+    // ?? IHttpContextAccessor — required so PatientLookupService can read ??????
+    // the incoming JWT and forward it to PatientService.
+    // Without this, every call to PatientService returns 401 Unauthorized.
+    builder.Services.AddHttpContextAccessor();
+
     builder.Services.AddHttpClient("PatientService", client =>
     {
         var baseUrl = builder.Configuration["ServiceUrls:PatientService"]
@@ -55,7 +61,16 @@ try
         client.Timeout = TimeSpan.FromSeconds(10);
     });
 
+    builder.Services.AddHttpClient("DoctorService", client =>
+    {
+        var baseUrl = builder.Configuration["ServiceUrls:DoctorService"]
+                      ?? "https://localhost:7215";
+        client.BaseAddress = new Uri(baseUrl);
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
+
     builder.Services.AddScoped<IPatientLookupService, PatientLookupService>();
+    builder.Services.AddScoped<IDoctorLookupService, DoctorLookupService>();
 
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>

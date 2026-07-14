@@ -1,4 +1,5 @@
 ﻿using Hospital.AppointmentService.DTOs;
+using Hospital.AppointmentService.Helpers;
 using System.Text.Json;
 
 namespace Hospital.AppointmentService.Services
@@ -6,13 +7,15 @@ namespace Hospital.AppointmentService.Services
     public class PatientLookupService : IPatientLookupService
     {
         private readonly HttpClient _http;
+        private readonly IHttpContextAccessor _accessor;
         private readonly ILogger<PatientLookupService> _logger;
         private static readonly JsonSerializerOptions _json =
             new() { PropertyNameCaseInsensitive = true };
 
-        public PatientLookupService(IHttpClientFactory factory, ILogger<PatientLookupService> logger)
+        public PatientLookupService(IHttpClientFactory factory, IHttpContextAccessor accessor, ILogger<PatientLookupService> logger)
         {
             _http = factory.CreateClient("PatientService");
+            _accessor = accessor;
             _logger = logger;
         }
 
@@ -20,7 +23,13 @@ namespace Hospital.AppointmentService.Services
         {
             try
             {
-                var response = await _http.GetAsync($"api/patients/{patientId}");
+                // Build request manually so we can attach the forwarded JWT token
+                using var request = new HttpRequestMessage(
+                    HttpMethod.Get, $"api/Patients/{patientId}");
+
+                TokenHelper.ForwardToken(request, _accessor, _logger);
+
+                var response = await _http.SendAsync(request);
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("PatientService returned {Status} for patient {Id}",

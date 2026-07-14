@@ -1,4 +1,5 @@
 ﻿using Hospital.AppointmentService.DTOs;
+using Hospital.AppointmentService.Helpers;
 using System.Text.Json;
 
 namespace Hospital.AppointmentService.Services
@@ -6,13 +7,15 @@ namespace Hospital.AppointmentService.Services
     public class DoctorLookupService : IDoctorLookupService
     {
         private readonly HttpClient _http;
+        private readonly IHttpContextAccessor _accessor;
         private readonly ILogger<DoctorLookupService> _logger;
         private static readonly JsonSerializerOptions _json =
             new() { PropertyNameCaseInsensitive = true };
 
-        public DoctorLookupService(IHttpClientFactory factory, ILogger<DoctorLookupService> logger)
+        public DoctorLookupService(IHttpClientFactory factory, IHttpContextAccessor accessor, ILogger<DoctorLookupService> logger)
         {
             _http = factory.CreateClient("DoctorService");
+            _accessor = accessor;
             _logger = logger;
         }
 
@@ -20,7 +23,13 @@ namespace Hospital.AppointmentService.Services
         {
             try
             {
-                var response = await _http.GetAsync($"api/doctors/{doctorId}");
+                using var request = new HttpRequestMessage(
+                 HttpMethod.Get, $"api/Doctors/{doctorId}");
+
+                TokenHelper.ForwardToken(request, _accessor, _logger);
+
+                var response = await _http.SendAsync(request);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("DoctorService returned {Status} for doctor {Id}",

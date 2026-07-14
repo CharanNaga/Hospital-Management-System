@@ -106,8 +106,9 @@ namespace Hospital.DischargeService.Services
                     });
 
                     InfoRow(table,
-                        "Patient Name", s.PatientName,
-                        "Patient ID", s.PatientId.ToString()[..8] + "...");
+                        "Report ID", s.Id.ToString()[..8] + "...",
+                        "Patient Name", s.PatientName
+                     );
 
                     InfoRow(table,
                         "Age", $"{s.PatientAge} years",
@@ -118,8 +119,8 @@ namespace Hospital.DischargeService.Services
                         "Discharged", s.DischargedOn.ToString("dd MMM yyyy HH:mm"));
 
                     InfoRow(table,
-                        "Discharging Dr", s.DischargingDoctorId.ToString()[..8] + "...",
-                        "Report ID", s.Id.ToString()[..8] + "...");
+                        "Discharging Dr ID", s.DischargingDoctorId.ToString()[..8] + "...",
+                       "Discharging Dr: ", s.DischargingDoctorName);
                 });
 
                 // ── Clinical Summary ──────────────────────────────────────────────

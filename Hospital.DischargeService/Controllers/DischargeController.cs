@@ -15,6 +15,7 @@ public class DischargeController : ControllerBase
     private readonly IQuestPdfReportService _pdfReportService;
     private readonly ILogger<DischargeController> _logger;
     private readonly IPatientLookupService _patientLookup;
+    private readonly IDoctorLookupService _doctorLookup;
 
 
     public DischargeController(
@@ -22,7 +23,8 @@ public class DischargeController : ControllerBase
         IAIDietService ai,
         IQuestPdfReportService pdfReportService,
         ILogger<DischargeController> logger,
-        IPatientLookupService patientLookup
+        IPatientLookupService patientLookup,
+        IDoctorLookupService doctorLookup
         )
     {
         _repository = repository;
@@ -30,6 +32,7 @@ public class DischargeController : ControllerBase
         _pdfReportService = pdfReportService;
         _logger = logger;
         _patientLookup = patientLookup;
+        _doctorLookup = doctorLookup;
     }
 
     [HttpGet]
@@ -49,17 +52,32 @@ public class DischargeController : ControllerBase
     public async Task<IActionResult> GetByPatient(Guid patientId)
         => Ok(await _repository.GetByPatientIdAsync(patientId));
 
+    [HttpGet("doctor/{doctorId:guid}")]
+    public async Task<IActionResult> GetByDoctor(Guid doctorId)
+        => Ok(await _repository.GetByDoctorIdAsync(doctorId));
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] DischargeSummaryDto dto)
     {
         //    This gives us FullName, Age, Gender — the caller does NOT supply these
         var patient = await _patientLookup.GetPatientAsync(dto.PatientId);
+        var doctor = await _doctorLookup.GetDoctorAsync(dto.DischargingDoctorId);
+
         if (patient is null)
         {
             return NotFound(new
             {
                 message = $"Patient {dto.PatientId} was not found in PatientService. " +
                           "Ensure the patient exists before creating a discharge record."
+            });
+        }
+
+        if (doctor is null)
+        {
+            return NotFound(new
+            {
+                message = $"Doctor {dto.DischargingDoctorId} was not found in DoctorService. " +
+                          "Ensure the doctor exists before creating a discharge record."
             });
         }
 
@@ -78,7 +96,8 @@ public class DischargeController : ControllerBase
             Treatment = dto.Treatment,
             Medications = dto.Medications,
             FollowUpInstructions = dto.FollowUpInstructions,
-            DischargingDoctorId = dto.DischargingDoctorId
+            DischargingDoctorId = dto.DischargingDoctorId,
+            DischargingDoctorName = doctor.FullName+" ("+doctor.Specialization+")",
         };
 
         summary.AIDietRecommendation = await _ai.GenerateDietAsync(summary.Diagnosis, summary.PatientAge);

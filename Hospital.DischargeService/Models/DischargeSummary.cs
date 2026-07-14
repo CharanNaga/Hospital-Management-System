@@ -17,5 +17,6 @@
         public string FollowUpInstructions { get; set; } = string.Empty;
         public DateTime DischargedOn { get; set; } = DateTime.UtcNow;
         public Guid DischargingDoctorId { get; set; }
+        public string DischargingDoctorName { get; set; } = string.Empty;
     }
 }

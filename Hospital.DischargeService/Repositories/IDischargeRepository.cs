@@ -7,6 +7,7 @@ namespace Hospital.DischargeService.Repositories
         Task<IEnumerable<DischargeSummary>> GetAllAsync();
         Task<DischargeSummary?> GetByIdAsync(Guid id);
         Task<IEnumerable<DischargeSummary>> GetByPatientIdAsync(Guid patientId);
+        Task<IEnumerable<DischargeSummary>> GetByDoctorIdAsync(Guid doctorId);
         Task AddAsync(DischargeSummary summary);
         Task SaveChangesAsync();
     }

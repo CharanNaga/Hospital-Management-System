@@ -19,3 +19,8 @@ public record PatientDetails(
     int Age,
     string Gender,
     string Email);
+
+public record DoctorDetails(
+    string FullName,
+    string Specialization,
+    string Email);

@@ -40,7 +40,13 @@ try
 
     builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
     builder.Services.AddScoped<IEmailService, EmailService>();
-   
+
+    // ── IHttpContextAccessor — required so lookup services can read the ────────
+    // incoming JWT from the current request and forward it to PatientService
+    // and DoctorService. Without this both calls return 401 Unauthorized.
+    builder.Services.AddHttpContextAccessor();
+
+
     builder.Services.AddHttpClient("PatientService", client =>
     {
         var baseUrl = builder.Configuration["ServiceUrls:PatientService"]
